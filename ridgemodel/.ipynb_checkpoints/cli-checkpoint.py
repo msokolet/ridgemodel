@@ -21,6 +21,10 @@
 # SOFTWARE.
 
 from .utils import *
+from .design import make_design_matrix
+from .utils import calc_regressor_orthogonality, cross_val_model, model_corr
+from .io import load_stack
+from .plots import plot_regressor_orthogonality, plot_model_corr
 
 import argparse
 import sys

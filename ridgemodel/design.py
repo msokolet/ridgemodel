@@ -22,6 +22,7 @@
 
 from .utils import *
 
+
 def make_design_matrix(event_frames, event_types, trial_onsets, opts):
     ''' 
     This function generates a design matrix from a column matrix with binaryevents. 
