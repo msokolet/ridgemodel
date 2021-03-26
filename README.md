@@ -1,0 +1,1 @@
+A Pythonic translation of [ridgeModel](https://github.com/musall/ridgeModel) in development, meant to process data created with the [wfield](https://github.com/jcouto/wfield).

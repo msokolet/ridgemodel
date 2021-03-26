@@ -1,0 +1,14 @@
+README.md
+setup.py
+ridgemodel/__init__.py
+ridgemodel/cli.py
+ridgemodel/design.py
+ridgemodel/io.py
+ridgemodel/plots.py
+ridgemodel/ridge.py
+ridgemodel/utils.py
+ridgemodel.egg-info/PKG-INFO
+ridgemodel.egg-info/SOURCES.txt
+ridgemodel.egg-info/dependency_links.txt
+ridgemodel.egg-info/entry_points.txt
+ridgemodel.egg-info/top_level.txt
