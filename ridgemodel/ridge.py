@@ -156,7 +156,7 @@ def ridge_MML(Y, X, recenter = True, L = None, regress = True, display_failures 
 
         L = np.full(pY,np.nan)
 
-        convergence_failures = np.empty(pY)
+        convergence_failures = np.empty(pY, dtype=int)
         for i in range(pY):
             L[i], flag = ridge_MML_one_Y(q, d2, n, Y_var[i], alpha2[:, i])
             convergence_failures[i] = flag
@@ -255,10 +255,8 @@ def ridge_MML_one_Y(q, d2, n, Y_var, alpha2):
     ## Set up smoothing
 
     # These rolling buffers will hold the last few values, to average for smoothing
-    sm_buffer = np.empty(smooth)
-    sm_buffer[:] = np.nan
-    test_vals_L = np.empty(smooth)
-    test_vals_L[:] = np.nan
+    sm_buffer = np.full(smooth, np.nan)
+    test_vals_L = np.full(smooth, np.nan)
 
     # Initialize index of the buffers where we'll write the next value
     sm_buffer_I = 0
@@ -311,34 +309,40 @@ def ridge_MML_one_Y(q, d2, n, Y_var, alpha2):
         
         L = k / 4
         NLL = np.mean(sm_buffer)
-        iteration=0
+        iteration = 0
+        
         while not done:
             L += L / step_denom
-            sm_buffer_I = sm_buffer_I % smooth + 1
+            sm_buffer_I = sm_buffer_I % smooth
             prev_NLL = NLL
-
+            iteration += 1
             # Compute negative log likelihood of the data for this value of lambda,
             # overwrite oldest value in the smoothing buffer
-            sm_buffer[int(sm_buffer_I-1)] = NLL_func(L)
-            test_vals_L[int(sm_buffer_I-1)] = L
+            sm_buffer[int(sm_buffer_I)] = NLL_func(L)
+            test_vals_L[int(sm_buffer_I)] = L
             NLL = np.mean(sm_buffer)
             
-            # Check if we've passed the minimum
+            # Check if we've passed the minimum or hit NaN NLL (L passed double-precision maximum)
             
-            if np.greater(NLL, prev_NLL):
+            if NLL>prev_NLL:
                 # Adjust for smoothing kernel (walk back by half the kernel)
                 sm_buffer_I -= (smooth - 1) / 2
-                sm_buffer_I += smooth * (sm_buffer_I < 1) # wrap around
+                sm_buffer_I += smooth * (sm_buffer_I < 0) # wrap around
                 
         
                 max_L = test_vals_L[int(sm_buffer_I-1)]
             
                 # Walk back by two more steps to find min bound
                 sm_buffer_I -= 2
-                sm_buffer_I += smooth * (sm_buffer_I < 1) # wrap around
-                min_L = test_vals_L[int(sm_buffer_I-1)]
+                sm_buffer_I += smooth * (sm_buffer_I < 0) # wrap around
+                min_L = test_vals_L[int(sm_buffer_I)]
 
+                passed_min = True
+                done = True
                 
+            elif np.isnan(NLL):
+                
+                passed_min = False
                 done = True
 
                 
@@ -346,9 +350,11 @@ def ridge_MML_one_Y(q, d2, n, Y_var, alpha2):
     # This is step 2 of the two-step algorithm at the bottom of page 6. Note
     # that Karabatsos made a mistake when describing the indexing relative to
     # k*, which is fixed here (we need to go from k*-2 to k*, not k*-1 to k*+1)
-
-    L, _, flag, _ = optimize.fminbound(NLL_func, max(0, min_L), max_L, xtol=1e-04, full_output=1, disp=0)
-
+    
+    if passed_min:
+        L, _, flag, _ = optimize.fminbound(NLL_func, max(0, min_L), max_L, xtol=1e-04, full_output=1, disp=0)
+    else:
+        flag = 1 # if the above loop could not find the minimum, return failed-to-converge flag
     
     return L, flag
 

@@ -24,17 +24,17 @@ from .utils import *
     
 def load_stack(localdisk):
 
-    fname = pjoin(localdisk,'SVTcorr.npy')
+    fname = pjoin(localdisk,'SVTcorr_wfield.npy')
     if os.path.isfile(fname):
         SVT = np.load(fname) # load adjusted temporal components
     else:
         raise OSError(f'Could not find: {fname}')
     
-    fname = pjoin(localdisk,'U_atlas.npy')
+    fname = pjoin(localdisk,'U_atlas_wfield.npy')
     if os.path.isfile(fname):
         U = np.load(fname) # load aligned spatial components
     else:
-        fname = pjoin(localdisk,'U.npy')
+        fname = pjoin(localdisk,'U_wfield.npy')
         if os.path.isfile(fname):
             U = np.load(fname) # If no aligned spatial components, load regular spatial components
         else:

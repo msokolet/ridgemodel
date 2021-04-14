@@ -128,7 +128,6 @@ def model_corr(r_stack, m_stack):
     var_P2 = np.expand_dims(np.sum((U @ cov_Vm) * U, 1),axis=0) # 1 x P
     std_Px_Py = var_P1 ** 0.5 * var_P2 ** 0.5 # 1 x P
     corr_mat = (cov_P / std_Px_Py).T
-
     corr_mat = array_shrink(corr_mat,r_stack.mask,'split')
     
     return corr_mat, var_P1, var_P2

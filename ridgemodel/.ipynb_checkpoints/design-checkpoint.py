@@ -22,6 +22,7 @@
 
 from .utils import *
 
+
 def make_design_matrix(event_frames, event_types, trial_onsets, opts):
     ''' 
     This function generates a design matrix from a column matrix with binaryevents. 
@@ -63,11 +64,9 @@ def make_design_matrix(event_frames, event_types, trial_onsets, opts):
 
             # get the zero lag regressor.
             trace = np.zeros(frames).astype(bool)
-            while event_frames[i_reg][i_event] < trial_onsets[i_trial+1]:
+            while i_event < total_events and event_frames[i_reg][i_event] < trial_onsets[i_trial+1]:
                 trace[event_frames[i_reg][i_event] - trial_onsets[i_trial]] = 1
                 i_event += 1
-                if i_event == total_events: 
-                    break
 
             # create full design matrix
             c_idx = np.where(trace)+kernel_idx[:,np.newaxis]
