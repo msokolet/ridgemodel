@@ -1,3 +1,2 @@
 [console_scripts]
 ridgemodel = ridgemodel.cli:main
-

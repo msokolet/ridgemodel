@@ -20,8 +20,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import h5py
+
 from .utils import *
-    
+
 def load_stack(localdisk):
 
     fname = pjoin(localdisk,'SVTcorr_wfield.npy')
@@ -29,7 +31,7 @@ def load_stack(localdisk):
         SVT = np.load(fname) # load adjusted temporal components
     else:
         raise OSError(f'Could not find: {fname}')
-    
+
     fname = pjoin(localdisk,'U_atlas_wfield.npy')
     if os.path.isfile(fname):
         U = np.load(fname) # load aligned spatial components
@@ -41,3 +43,30 @@ def load_stack(localdisk):
             raise OSError(f'Could not find: {fname}')
 
     return SVDStack(U,SVT)
+
+
+def load_opts(localdisk):
+
+    opts_fname = pjoin(localdisk,'opts.json')
+    if os.path.isfile(opts_fname):
+        with open(opts_fname, 'r') as opts_f:
+            opts = json.load(opts_f) # Load some options. 
+    else:
+        raise OSError(f'Could not find: {opts_fname}')
+            
+    return opts
+
+def load_events(localdisk):
+
+    events_fname = pjoin(localdisk,'events.npz')
+    if os.path.isfile(events_fname):
+        events = np.load(events_fname, allow_pickle=True)['events']
+    else:
+        opts_fname = pjoin(localdisk,'events.npy') # If no npz file, load npy
+        if os.path.isfile(events_fname):
+            events = np.load(events_fname, allow_pickle=True)
+        else:
+            raise OSError(f'Could not find: {opts_fname}')
+
+    return events
+

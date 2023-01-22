@@ -32,9 +32,12 @@ import matplotlib.pyplot as plt
 from os.path import join as pjoin
 from numpy import linalg as LA
 from scipy import optimize, io
-from tqdm import tqdm, trange
+import scipy.stats as st
+from tqdm.notebook import tqdm, trange
 from .ridge import *
 from scipy.sparse import issparse
+warnings.filterwarnings('ignore')
+import random
 
 def reconstruct(u,svt,dims = None):
     if issparse(u):
@@ -66,7 +69,7 @@ class SVDStack(object):
         self.dtype = dtype
         self.mask = np.isnan(U[:,:,0]) # create the mask
         
-        
+            
     def split(self, folds):
     
         if folds==1:
@@ -82,9 +85,9 @@ class SVDStack(object):
 
             yield i_fold, train_idx # yield successive training folds and their indices
         
-    def train(self, train_idx, cR, c_ridge = None):
+    def train(self, train_idx, cR, c_ridge = None, suppress_output = False):
         
-        return ridge_MML(self.SVT[:,train_idx].T, cR[train_idx,:], recenter = True, L = c_ridge)            
+        return ridge_MML(self.SVT[:,train_idx].T, cR[train_idx,:], recenter = True, L = c_ridge, display_failures = not suppress_output)            
     
     def test(self, train_idx, cR, c_beta):
         
@@ -128,7 +131,6 @@ def model_corr(r_stack, m_stack):
     var_P2 = np.expand_dims(np.sum((U @ cov_Vm) * U, 1),axis=0) # 1 x P
     std_Px_Py = var_P1 ** 0.5 * var_P2 ** 0.5 # 1 x P
     corr_mat = (cov_P / std_Px_Py).T
-
     corr_mat = array_shrink(corr_mat,r_stack.mask,'split')
     
     return corr_mat, var_P1, var_P2
@@ -197,7 +199,7 @@ def array_shrink(data_in, mask, mode='merge'):
 
     return data_out
 
-def cross_val_model(full_R, r_stack, c_labels, reg_idx, reg_labels, folds):
+def cross_val_model(full_R, r_stack, c_labels, reg_idx, reg_labels, folds, suppress_output=False):
 
     '''
     This function computed the cross-validated R^2.
@@ -226,15 +228,14 @@ def cross_val_model(full_R, r_stack, c_labels, reg_idx, reg_labels, folds):
     
     folds_gen = r_stack.split(folds) # split the real stack into folds for training the model
     
-    for i_fold, train_idx in tqdm(folds_gen, total = folds, desc = 'Performing cross-validation'): 
+    for i_fold, train_idx in (tqdm(folds_gen, desc = 'Performing cross-validation', total=folds) if suppress_output==False else folds_gen): 
       
         if i_fold == 0:
-            c_ridge, c_beta[i_fold], _ = r_stack.train(train_idx, cR) # train the model on training indexes in current fold
+            c_ridge, c_beta[i_fold], _ = r_stack.train(train_idx, cR, suppress_output=suppress_output) # train the model on training indexes in current fold
         else:
             c_beta[i_fold] = r_stack.train(train_idx, cR, c_ridge) # train the model on training indexes in current fold. ridge value should be the same as in the first run.
 
         m_stack.test(train_idx, cR, c_beta[i_fold]) # apply the model on the remaining (testing) indexes in the modeled stack
-        
         
     return m_stack, c_beta, cR, sub_idx, c_ridge, c_labels
 

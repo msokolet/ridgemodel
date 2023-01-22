@@ -20,10 +20,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from .utils import *
+import numpy as np
+from tqdm.notebook import tqdm, trange
 
-
-def make_design_matrix(event_frames, event_types, trial_onsets, trial_offsets, opts):
+def make_design_matrix(events, event_types, opts):
     ''' 
     This function generates a design matrix from a column matrix with binaryevents. 
     event_types defines the type of design matrix that is generated.
@@ -31,47 +31,35 @@ def make_design_matrix(event_frames, event_types, trial_onsets, trial_offsets, o
 
     Originally written in MATLAB by Simon Musall, 2019
     
-    Adapted to Python and modified by Michael Sokoletsky, 2021
+    Adapted to Python by Michael Sokoletsky, 2021
     
     '''
-    random.seed(4)
-    
+    frames = opts['frames_per_trial']
     full_mat = [None] * len(event_types)
     event_idx = [None] * len(event_types)
-    trial_cnt = np.size(trial_onsets, 0) # nr of trials
-    s_frames = np.amin(np.diff(trial_onsets)) # number of frames in shortest trial
+    events = events.reshape((-1, frames, len(event_types))) # reshape to trials
+    trial_cnt = np.size(events,0) # nr of trials
 
     for i_reg, event_type in tqdm(enumerate(event_types), total=len(event_types),
                               desc = 'Building design matrix'):
 
+        # determine index for current event type
+        if event_type == 1:
+            kernel_idx = np.arange(frames) # index for whole trial        
+        elif event_type == 2:
+            kernel_idx = np.arange(opts['s_post_time']+1) # index for design matrix to cover post event activity
+        elif event_type == 3:
+            kernel_idx = np.arange(-opts['m_pre_time'],opts['m_post_time']+1)
+        else:
+            print('Unknown event type. Must be a value between 1 and 3.')
+
         # run over trials
         d_mat = [None] * trial_cnt
-        
-        i_event = 0
-        total_events = len(event_frames[i_reg])
 
         for i_trial in range(trial_cnt):
-        
-            frames = trial_offsets[i_trial] - trial_onsets[i_trial]
-            
-            # determine index for current event type and trial
-            if event_type == 1:
-                kernel_idx = np.arange(s_frames) # index up to the shortest trial end
-            elif event_type == 2:
-                kernel_idx = np.arange(np.ceil(opts['s_post_time'] * opts['fs']).astype(int)) # index for design matrix to cover post event activity
-            elif event_type == 3:
-                kernel_idx = np.arange(-np.ceil(opts['m_pre_time']* opts['fs']).astype(int),np.ceil(opts['m_post_time']* opts['fs']).astype(int))
-            else:
-                print('Unknown event type. Must be a value between 1 and 3.')
 
             # get the zero lag regressor.
-            trace = np.zeros(frames).astype(bool)
-            
-            while i_event < total_events and event_frames[i_reg][i_event] < trial_offsets[i_trial]:
-
-                trace[event_frames[i_reg][i_event] - trial_onsets[i_trial]] = 1
-
-                i_event += 1
+            trace = events[i_trial,:,i_reg].astype(bool)
 
             # create full design matrix
             c_idx = np.where(trace)+kernel_idx[:,np.newaxis]
@@ -90,25 +78,10 @@ def make_design_matrix(event_frames, event_types, trial_onsets, trial_offsets, o
 
         full_mat[i_reg] = np.vstack(d_mat) # combine all trials
         c_idx = np.sum(full_mat[i_reg],0) > 0 # don't use empty regressors
-        full_mat[i_reg] = full_mat[i_reg][:, c_idx]
-        event_idx[i_reg] = np.zeros(sum(c_idx), dtype=np.ubyte)+i_reg  
+        full_mat[i_reg] = full_mat[i_reg][:,c_idx]
+        event_idx[i_reg] = np.zeros(sum(c_idx))+i_reg        
     
     full_mat = np.hstack(full_mat) # combine all regressors into larger matrix
     event_idx = np.concatenate(event_idx) #  combine index so we know what is what
 
     return full_mat, event_idx
-
-def calc_regressor_orthogonality(R, idx, rmv = True):
-    
-    QRR = LA.qr(np.divide(R,np.sqrt(np.sum(R**2,0))),mode='r') # orthogonalize normalized design matrix
-    
-    if np.sum(abs(np.diagonal(QRR)) > np.max(np.shape(R)) * abs(np.spacing(QRR[0,0]))) < np.size(R,1): # check if design matrix is full rank
-        if rmv:
-            keep_idx = abs(np.diagonal(QRR)) > max(np.shape(R)) * abs(np.spacing(QRR[0,0])) # reject regressors that cause rank-defficint matrix
-            warnings.warn(f'Warning: design matrix contains redundant regressors! Removing {np.sum(~keep_idx)}/{np.size(R,1)} regressors.')
-            R = R[:,keep_idx]
-            idx = idx[keep_idx]
-        else:
-            warnings.warn('Warning: design matrix contains redundant regressors! This will break the model.')           
-                      
-    return QRR, R, idx

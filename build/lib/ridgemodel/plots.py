@@ -16,7 +16,7 @@
 
 from .utils import *
 
-def plot_regressor_orthogonality(QRR,localdisk = None):
+def plot_regressor_orthogonality(QRR,localdisk = None, title = 'Regressor orthogonality', figsize = [9,5]):
     '''
     Plots regressor orthogonality. The resulting plot ranges from 0 to 1 for each regressor, with 1 being
     fully orthogonal to all preceeding regressors in the matrix and 0 being
@@ -26,12 +26,12 @@ def plot_regressor_orthogonality(QRR,localdisk = None):
 
     '''
     
-    fig = plt.figure(figsize=[9,5])
+    fig = plt.figure(figsize=figsize)
 
     plt.plot(abs(np.diagonal(QRR)),linewidth=2)
     plt.ylim(0,1.1)
 
-    plt.title('Regressor orthogonality') # this shows how orthogonal individual regressors are to the rest of the matrix
+    plt.title(title) # this shows how orthogonal individual regressors are to the rest of the matrix
 
     plt.ylabel('Norm. vector angle')
     plt.xlabel('Regressors')
@@ -43,7 +43,7 @@ def plot_regressor_orthogonality(QRR,localdisk = None):
         fig.savefig(pjoin(folder,'regressor_orthogonality.pdf'))
         
         
-def plot_model_corr(cvR2, regressor, localdisk = None):
+def plot_model_corr(cvR2, regressor, c_max = 0.5, localdisk = None):
     '''
     Plots cross-validated R^2 results
     cvR2            : Cross-validated R^2 array
@@ -56,7 +56,7 @@ def plot_model_corr(cvR2, regressor, localdisk = None):
 
     fig = plt.figure(figsize=[9,5])
 
-    plt.imshow(cvR2,cmap=curr_cmap, vmin=0,vmax=0.25);
+    plt.imshow(cvR2,cmap=curr_cmap, vmin=0,vmax=c_max);
     
     plt.title(f'cVR$^2$ - {regressor}') # this shows how orthogonal individual regressors are to the rest of the matrix
     plt.axis('off')

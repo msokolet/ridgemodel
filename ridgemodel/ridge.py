@@ -85,8 +85,6 @@ def ridge_MML(Y, X, recenter = True, L = None, regress = True, display_failures 
     
     Adapted to Python by Michael Sokoletsky, 2021
     """
-
-    warnings.filterwarnings('ignore')
     
     ## Optional arguments
 
@@ -157,7 +155,9 @@ def ridge_MML(Y, X, recenter = True, L = None, regress = True, display_failures 
         L = np.full(pY,np.nan)
 
         convergence_failures = np.empty(pY, dtype=int)
+        
         for i in range(pY):
+            
             L[i], flag = ridge_MML_one_Y(q, d2, n, Y_var[i], alpha2[:, i])
             convergence_failures[i] = flag
         
@@ -229,8 +229,6 @@ def ridge_MML(Y, X, recenter = True, L = None, regress = True, display_failures 
     
     if compute_L and display_failures and sum(convergence_failures) > 0:
         print(f'fminbnd failed to converge {sum(convergence_failures)}/{pY} times')
-
-    warnings.resetwarnings()    
     
     if compute_L:
         return L, betas, convergence_failures
@@ -344,6 +342,10 @@ def ridge_MML_one_Y(q, d2, n, Y_var, alpha2):
                 
                 passed_min = False
                 done = True
+                
+    else:
+        
+        passed_min = True
 
                 
     ## Bounded optimization of lambda

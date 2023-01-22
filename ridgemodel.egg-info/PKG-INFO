@@ -1,4 +1,4 @@
-Metadata-Version: 1.0
+Metadata-Version: 2.1
 Name: ridgemodel
 Version: 0.1
 Summary: Create design matrix and perform ridge regression on widefield imaging data. Based on a MATLAB package by Simon Musall: https://github.com/churchlandlab/ridgeModel
@@ -6,5 +6,6 @@ Home-page: https://github.com/msokolet/ridgemodel
 Author: Michael Sokoletsky
 Author-email: michael.sokoletsky@weizmann.ac.il
 License: MIT
-Description: Create design matrix and perform ridge regression on widefield imaging data. Based on a MATLAB package by Simon Musall: https://github.com/churchlandlab/ridgeModel
-Platform: UNKNOWN
+License-File: LICENSE
+
+Create design matrix and perform ridge regression on widefield imaging data. Based on a MATLAB package by Simon Musall: https://github.com/churchlandlab/ridgeModel
